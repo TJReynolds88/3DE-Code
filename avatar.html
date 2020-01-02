@@ -19,11 +19,14 @@
   document.body.appendChild(renderer.domElement);
 
   // ******** START CODING ON THE NEXT LINE ********
+  var marker = new THREE.Object3D();
+  scene.add(marker);
+  
 //Body//
 var body = new THREE.CylinderGeometry(1, 120, 100, 0);
 var cover = new THREE.MeshNormalMaterial();
-var avatar = new THREE.Mesh(body, cover);
-scene.add(avatar);
+var avatar = new THREE.Mesh(body, cover)
+marker.add(avatar);
 
 // Hands //
 var hand = new THREE.SphereGeometry(50);
@@ -56,19 +59,66 @@ head = new THREE.Mesh(head,cover);
 head.position.set(0,125, 0);
 avatar.add(head);
 
+marker.add(camera);
+
+
 // Now animate whate the camera sees on screen //
 var isCartwheeling = false;
+var isFlipping = false;
 // Y = spins( twirle) Z = turns (kartwheel)  X = flips (frontflip) //
 
 function animate(){
   requestAnimationFrame(animate);
   if (isCartwheeling){
-   avatar.rotation.y = avatar.rotation.y + 0.01; 
+   avatar.rotation.z = avatar.rotation.z + 0.03; 
+  }
+  if (isFlipping){
+    avatar.rotation.x = avatar.rotation.x + 0.05;
   }
   renderer.render(scene, camera);
 }
 
 animate();
+
+document.addEventListener('keydown', sendKeyDown);
+
+function sendKeyDown(event){
+  var code = event.code;
+  if (code == 'ArrowLeft') marker.position.x = marker.position.x - 5;
+  if (code == 'ArrowRight') marker.position.x = marker.position.x + 5;
+  if (code == 'ArrowUp') marker.position.z = marker.position.z - 5;
+  if (code == 'ArrowDown') marker.position.z = marker.position.z + 5;
+  
+  if (code == 'KeyC') isCartwheeling =!isCartwheeling;
+  if (code == 'KeyF') isFlipping =! isFlipping;
+}
+
+// Make Trees Appear //
+
+function makeTreeAt(x, z) {
+  var trunk = new THREE.Mesh(
+    new THREE.CylinderGeometry(50, 50, 200),
+    new THREE.MeshBasicMaterial({color: '#765c48'})
+    );
+    
+  var top = new THREE.Mesh(
+    new THREE.SphereGeometry(150),
+    new THREE.MeshBasicMaterial({color: 'forestgreen'})
+    );
+    
+    top.position.y = 175;
+    trunk.add(top);
+    
+    trunk.position.set(x, -75, z);
+    scene.add(trunk);
+  }
+  
+  makeTreeAt( 500, 0);
+  makeTreeAt( -500, 0);
+  makeTreeAt( 750, -1000);
+  makeTreeAt( -750, -1000);
+  makeTreeAt( -750, -1000);
+  
 
   // Now, show what the camera sees on the screen:
   renderer.render(scene, camera);
