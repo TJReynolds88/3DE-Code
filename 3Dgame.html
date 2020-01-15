@@ -1,0 +1,80 @@
+<body></body>
+<script src="/three.js"></script>
+<script src="/physi.js"></script>
+<script src="/scoreboard.js"></script>
+<script>
+  // Physics settings
+  Physijs.scripts.ammo ='/ammo.js';
+  Physijs.scripts.worker = '/physijs_worker.js';
+  
+  // The "scene" is where stuff in our game will happen:
+  var scene = new Physijs.Scene();
+  scene.setGravity(new THREE.Vector3( 0, -250, 0 ));
+  var flat = {flatShading: true};
+  var light = new THREE.AmbientLight('white', 0.8);
+  scene.add(light);
+
+  // The "camera" is what sees the stuff:
+  var w = window.innerWidth / 2;
+  var h = window.innerHeight / 2;
+  var camera = new THREE.OrthographicCamera(-w, w, h, -h, 1, 10000 );
+  camera.position.z = 500;
+  scene.add(camera);
+
+  // The "renderer" draws what the camera sees onto the screen:
+  var renderer = new THREE.WebGLRenderer({antialias: true});
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setClearColor('skyblue');
+  document.body.appendChild(renderer.domElement);
+
+  // ******** START CODING ON THE NEXT LINE ********
+
+
+   var ground = addGround();
+  // var avatar = addAvatar();
+  // var scoreboard = addScoreboard();
+  
+  
+  function addGround() {
+    var shape = new THREE.BoxGeometry(2*w, h, 10);
+    var cover = new THREE.MeshBasicMaterial({color: 'lawngreen'});
+    var ground = new Physijs.BoxMesh(shape, cover, 0);
+    ground.position.y = -h/2;
+    scene.add(ground);
+    return ground;
+  }
+  
+  function addAvatar() {
+    var shape = new THREE.CubeGeometry(100, 100, 1);
+    var cover = new THREE.MeshBasicMaterial({visible: false});
+    var avatar = new Physijs.BoxMesh( shape, cover, 1);
+    scene.add(avatar);
+    
+    var image = new THREE.TextureLoader().load("/images/monster.png");
+    var material = new THREE.SpriteMaterial({map: image});
+    var sprite = new THREE.Sprite(material);
+    sprite.scale.set(100, 100, 1);
+    avatar.add(sprite);
+    
+    avatar.setLinearFactor(new THREE.Vector3(1, 1, 0));
+    avatar.setAngularFActor(new THREE.Vector3(0, 0, 0));
+    
+    return avatar;
+  }
+
+
+
+  // Start Animation
+
+  var clock = new THREE.Clock();
+  function animate() {
+    requestAnimationFrame(animate);
+    var t = clock.getElapsedTime();
+
+    // Animation code goes here...
+
+    renderer.render(scene, camera);
+  }
+
+  animate();
+</script>
