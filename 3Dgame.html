@@ -29,13 +29,15 @@
 
   // ******** START CODING ON THE NEXT LINE ********
 
-
+   var gameOver = false;
+   
    var ground = addGround();
-  // var avatar = addAvatar();
-  // var scoreboard = addScoreboard();
+   var avatar = addAvatar();
+   var scoreboard = addScoreboard();
   
+  reset();
   
-  function addGround() {
+    function addGround() {
     var shape = new THREE.BoxGeometry(2*w, h, 10);
     var cover = new THREE.MeshBasicMaterial({color: 'lawngreen'});
     var ground = new Physijs.BoxMesh(shape, cover, 0);
@@ -43,6 +45,7 @@
     scene.add(ground);
     return ground;
   }
+  
   
   function addAvatar() {
     var shape = new THREE.CubeGeometry(100, 100, 1);
@@ -57,10 +60,91 @@
     avatar.add(sprite);
     
     avatar.setLinearFactor(new THREE.Vector3(1, 1, 0));
-    avatar.setAngularFActor(new THREE.Vector3(0, 0, 0));
+    avatar.setAngularFactor(new THREE.Vector3(0, 0, 0));
     
     return avatar;
   }
+  
+  //Launch Fruit
+  
+  function launchFruit() {
+    if (gameOver) return;
+    var speed = 500 + (10 * Math.random() * scoreboard.getScore());
+    var fruit = makeFruit();
+    fruit.setLinearVelocity(new THREE.Vector3(-speed, 0, 0));
+    fruit.setAngularVelocity(new THREE.Vector3(0, 0 , 10));
+  }
+  
+  launchFruit();
+  setInterval(launchFruit, 2.5*1000);
+  
+  // Creating Fruit
+  
+  function makeFruit() {
+    var shape = new THREE.SphereGeometry(40, 16, 24);
+    var cover = new THREE.MeshBasicMaterial({visible:false});
+    var fruit = new Physijs.SphereMesh(shape, cover);
+    fruit.position.set(w, 40, 0);
+    scene.add(fruit);
+    
+    var image = new THREE.TextureLoader().load("/images/fruit.png");
+    cover = new THREE.MeshBasicMaterial({map: image, transparent: true});
+    shape = new THREE.PlaneGeometry(80, 80);
+    var picturePlane = new THREE.Mesh(shape, cover);
+    fruit.add(picturePlane);
+    
+    fruit.setAngularFactor(new THREE.Vector3(0, 0, 1));
+    fruit.setLinearFactor(new THREE.Vector3(1, 1, 0));
+    fruit.isFruit = true;
+    
+    return fruit;
+    
+  }
+  
+  
+
+  
+  // Adding Scoring
+   
+  function addScoreboard() {
+    var scoreboard = new Scoreboard();
+    scoreboard.score();
+    scoreboard.help(
+      "Use arrow keys to move and the space bar to jump. " +
+      "Don't let the fruit get past you!!!"
+      
+      );
+      return scoreboard;
+      
+  }
+  
+  function reset() {
+    avatar._dirtyPosition = true;
+    avatar.position.set(-0.6*w, 200, 0);
+    avatar.setLinearVelocity(new THREE.Vector3(0, 250, 0 ));
+    
+    scoreboard.score(0);
+    scoreboard.message('');
+    
+    var last = scene.children.length - 1;
+    for (var i =last; i>0; i--) {
+      var obj = scene.children[i];
+      if (obj.isFruit) scene.remove(obj);
+    }
+    
+    if (gameOver) {
+        gameOver = false;
+        animate();
+    }
+  }
+    
+    function gameStep() {
+      scene.simulate();
+      setTimeout(gameStep, 1000/30);
+      
+    }
+    
+    gameStep();
 
 
 
@@ -68,6 +152,8 @@
 
   var clock = new THREE.Clock();
   function animate() {
+    if (gameOver) return;
+    
     requestAnimationFrame(animate);
     var t = clock.getElapsedTime();
 
@@ -77,4 +163,56 @@
   }
 
   animate();
+  
+  // Movement Controls
+  
+  document.addEventListener("keydown" , sendKeyDown);
+  function sendKeyDown(event) {
+  var code = event.code;
+  
+  if ( code == 'ArrowLeft') left();
+  if ( code == 'ArrowRight') right();
+  if ( code == 'ArrowUp') up();
+  if ( code == 'ArrowDown') down();
+  if ( code == 'Space') up();
+  if (code == 'KeyR') reset();
+  }
+  
+  function left() { move (-100, 0); }
+  function right() { move(100, 0); }
+  function up() { move(0, 250); }
+  function down() { move(0, -50); }
+  
+  function move(x,y) {
+    if (x > 0) avatar.scale.x = 1;
+    if (x < 0) avatar.scale.x = -1;
+    
+    var dir = new THREE.Vector3(x, y, 0);
+    avatar.applyCentralImpulse(dir);
+    
+  }
+  
+  // Eatting Fruit and Keeping Score
+  
+  
+  avatar.addEventListener('collision' , sendCollision);
+  function sendCollision(object) {
+    if (gameOver) return;
+    
+    if (object.isFruit) {
+      scoreboard.addPoints(10);
+      avatar.setLinearVelocity(new THREE.Vector3(0, 250, 0));
+      scene.remove(object);
+      
+    }
+    
+    if (object == ground) {
+      gameOver = true;
+      scoreboard.message(
+        "Purple Fruit Monster crashed! " +
+        "Press R to try again."
+        );
+    }
+  }
+  
 </script>
