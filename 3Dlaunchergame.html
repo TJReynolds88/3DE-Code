@@ -1,0 +1,173 @@
+<body></body>
+<script src="/three.js"></script>
+<script src="/physi.js"></script>
+<script src ="/scoreboard.js"></script>
+<script>
+  // Physics settings
+  Physijs.scripts.ammo = '/ammo.js';
+  Physijs.scripts.worker = '/physijs_worker.js';
+
+  // The "scene" is where stuff in our game will happen:
+  var scene = new Physijs.Scene();
+  scene.setGravity(new THREE.Vector3( 0, -100, 0 ));
+  var flat = {flatShading: true};
+  var light = new THREE.AmbientLight('white', 0.8);
+  scene.add(light);
+
+  // The "camera" is what sees the stuff:
+  var aspectRatio = window.innerWidth / window.innerHeight;
+  var camera = new THREE.PerspectiveCamera(75, aspectRatio, 1, 10000);
+  camera.position.z = 500;
+  camera.position.y = 500;
+  camera.lookAt(new THREE.Vector3(0, 0, 0));
+  scene.add(camera);
+
+  // The "renderer" draws what the camera sees onto the screen:
+  var renderer = new THREE.WebGLRenderer({antialias: true});
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  document.body.appendChild(renderer.domElement);
+
+  // ******** START CODING ON THE NEXT LINE ********
+
+
+  
+  // Launcher
+  function Launcher() {
+    this.angle = 0;
+    this.power = 0;
+    this.draw();
+  }
+  
+  Launcher.prototype.vector = function() {
+    return new THREE.Vector3(
+      Math.sin(this.angle),
+      Math.cos(this.angle),
+      0
+      );
+  };
+  
+  Launcher.prototype.moveLeft = function() {
+    this.angle = this.angle - Math.PI / 100;
+    this.arrow.setDirection(this.vector());
+  };
+    Launcher.prototype.moveRight = function() {
+    this.angle = this.angle + Math.PI / 100;
+    this.arrow.setDirection(this.vector());
+  };
+  
+  Launcher.prototype.powerUp = function() {
+    if (this.power >= 100 )return;
+    this.power = this.power + 5;
+    this.arrow.setLength(this.power);
+  }
+  
+  Launcher.prototype.launch = function() {
+    var shape = new THREE.SphereGeometry(10);
+    var material = new THREE.MeshPhongMaterial({color: 'yellow'});
+    var ball = new Physijs.SphereMesh(shape, material, 1);
+    ball.name = 'Game Ball';
+    ball.position.set(0,0,300);
+    scene.add(ball);
+    
+    var speedVector = new THREE.Vector3(
+      2.5 * this.power * this.vector().x,
+      2.5 * this.power * this.vector().y,
+      -80
+      );
+      ball.setLinearVelocity(speedVector);
+      
+      this.power = 0;
+      this.arrow.setLength(100);
+      
+  }
+  
+  function Basket(size, points) {
+    this.size = size;
+    this.points = points;
+    this.height = 100/Math.log10(size);
+    var r = Math.random;
+    this.color = new THREE.Color(r(), r(), r());
+    
+    this.draw();
+    
+  }
+  
+  Basket.protoype.draw = function() {
+    var color = new THREE.MeshPhongMaterial({
+      color: this.color,
+      shininess: 50,
+      specular: 'white'
+    });
+    
+    var shape = new THREE.CubeGeometry(this.size, 1, this.size);
+    var goal = new Physijs.BoxMesh(shape, cover, 0);
+    goal.position.y = this.height / 100;
+    scene.add(goal);
+
+  }
+  
+  
+  Launcher.prototype.draw = function() {
+  var direction = new THREE.Vector3(0, 1, 0);
+  var position = new THREE.Vector3(0, -100, 250);
+  var length = 100;
+  this.arrow = new THREE.ArrowHelper(
+    direction,
+    position,
+    length,
+    'gold'
+    );
+    
+    scene.add(this.arrow);
+  };
+    
+
+  var launcher =  new Launcher();
+  
+  // Scoreboard
+  
+  var scoreboard = new Scoreboard();
+  scoreboard.countdown(120);
+  scoreboard.score(0);
+  scoreboard.help(
+    'Use the right and left arrow keys to point the launcher.' +
+    'Press and hold the down arrow key to power up the launcher.  ' +
+    'Let go of the down arrow key to launch.' +
+    'Watch out for the wind!!'
+  
+    );
+    scoreboard.onTimeExpired(timeExpired);
+    function timeExpired() {
+      scoreboard.message("Game Over!!");
+    }
+  
+
+  // Animate motion in the game
+  function animate() {
+    requestAnimationFrame(animate);
+    renderer.render(scene, camera);
+  }
+  animate();
+
+  // Run physics
+  function gameStep() {
+    scene.simulate();
+    // Update physics 60 times a second so that motion is smooth
+    setTimeout(gameStep, 1000/60);
+  }
+  gameStep();
+  document.addEventListener('keydown', sendKeyDown);
+  function sendKeyDown(event) {
+    var code = event.code;
+    if (code == 'ArrowLeft') launcher.moveLeft();
+    if (code == 'ArrowRight') launcher.moveRight();
+    if (code == "ArrowDown") launcher.powerUp();
+  }
+  
+  document.addEventListener('keyup', sendKeyUp);
+  function sendKeyUp(event){
+    var code = event.code;
+    if (code == 'ArrowDown') launcher.launch();
+  }
+  
+</script>
